@@ -29,24 +29,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ai-capture"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "log",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-log",
- "thiserror 1.0.69",
- "tokio",
- "windows 0.52.0",
- "windows-capture",
-]
-
-[[package]]
 name = "alloc-no-stdlib"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1904,6 +1886,24 @@ name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
+
+[[package]]
+name = "lite-record"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-log",
+ "thiserror 1.0.69",
+ "tokio",
+ "windows 0.52.0",
+ "windows-capture",
+]
 
 [[package]]
 name = "litemap"

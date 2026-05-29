@@ -28,7 +28,7 @@ watch(recordingSource, async (source) => {
 <template>
   <div class="min-h-screen bg-background flex flex-col" data-testid="app-root">
     <header class="h-12 border-b flex items-center px-4 bg-card">
-      <h1 class="text-lg font-semibold">AI Capture</h1>
+      <h1 class="text-lg font-semibold">lite-record</h1>
     </header>
 
     <main class="flex-1 flex flex-col items-center justify-center p-6 gap-8">
@@ -146,7 +146,7 @@ watch(recordingSource, async (source) => {
         <Settings class="mr-2 h-4 w-4" />
         设置
       </Button>
-      <span class="text-xs text-muted-foreground">AI Capture v0.1.0</span>
+      <span class="text-xs text-muted-foreground">lite-record v0.1.0</span>
     </footer>
   </div>
 </template>

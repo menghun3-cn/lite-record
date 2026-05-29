@@ -1,15 +1,15 @@
 [package]
-name = "ai-capture"
+name = "lite-record"
 version = "0.1.0"
-description = "AI Capture - Windows轻量级录屏工具"
-authors = ["AI Capture Team"]
+description = "lite-record - Windows轻量级录屏工具"
+authors = ["lite-record"]
 license = "MIT"
 repository = ""
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "ai_capture_lib"
+name = "lite_record_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

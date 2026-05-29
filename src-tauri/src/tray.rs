@@ -37,7 +37,7 @@ pub fn setup_tray<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
     let _tray = TrayIconBuilder::with_id("main-tray")
         .icon(icon)
         .menu(&menu)
-        .tooltip("AI Capture - 就绪")
+        .tooltip("lite-record - 就绪")
         .on_menu_event(|app, event| match event.id.as_ref() {
             "tray_show" => {
                 if let Some(window) = app.get_webview_window("main") {
@@ -76,9 +76,9 @@ pub fn update_tray_tooltip(app: &AppHandle, recording: bool) {
     }
     if let Some(tray) = app.tray_by_id("main-tray") {
         let tooltip = if recording {
-            "AI Capture - 录制中"
+            "lite-record - 录制中"
         } else {
-            "AI Capture - 就绪"
+            "lite-record - 就绪"
         };
         let _ = tray.set_tooltip(Some(tooltip));
     }

@@ -18,7 +18,7 @@ describe('App.vue', () => {
   it('渲染主界面', () => {
     const wrapper = mount(App)
     expect(wrapper.find('[data-testid="app-root"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('AI Capture')
+    expect(wrapper.text()).toContain('lite-record')
   })
 
   it('显示录屏源选择', () => {

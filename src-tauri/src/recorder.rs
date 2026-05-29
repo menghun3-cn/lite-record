@@ -237,7 +237,7 @@ mod tests {
     #[cfg(not(windows))]
     #[test]
     fn test_recorder_stop_creates_file() {
-        let dir = std::env::temp_dir().join("ai-capture-test");
+        let dir = std::env::temp_dir().join("lite-record-test");
         let _ = std::fs::create_dir_all(&dir);
         let mut config = create_test_config();
         config.output_dir = dir.clone();

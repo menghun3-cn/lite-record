@@ -44,7 +44,7 @@ fn ensure_overlay_window_inline(app: &AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
-    let temp_dir = std::env::temp_dir().join("ai-capture-overlay");
+    let temp_dir = std::env::temp_dir().join("lite-record-overlay");
     std::fs::create_dir_all(&temp_dir).map_err(|e| format!("创建临时目录失败: {}", e))?;
     let html_path = temp_dir.join("overlay.html");
     std::fs::write(&html_path, OVERLAY_HTML).map_err(|e| format!("写入 overlay HTML 失败: {}", e))?;

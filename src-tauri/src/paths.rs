@@ -49,7 +49,7 @@ pub fn find_project_root() -> Option<PathBuf> {
 /// 视频输出目录：固定为项目根目录下的 `video/`，不使用用户 AppData。
 pub fn resolve_video_dir() -> Result<PathBuf, String> {
     let root = find_project_root().ok_or(
-        "无法定位项目根目录，请从 ai-capture 项目内启动应用".to_string(),
+        "无法定位项目根目录，请从 lite-record 项目内启动应用".to_string(),
     )?;
 
     let dir = root.join("video");
