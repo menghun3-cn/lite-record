@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use tauri::Manager;
 
 mod commands;
 mod overlay;
@@ -44,6 +45,19 @@ pub fn run() {
         .manage(AppState::new())
         .setup(|app| {
             tray::setup_tray(app)?;
+
+            if let Some(main_window) = app.get_webview_window("main") {
+                let main_for_close = main_window.clone();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        if let Err(e) = main_for_close.hide() {
+                            log::warn!("隐藏主窗口到托盘失败: {}", e);
+                        }
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

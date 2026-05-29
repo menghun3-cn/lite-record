@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
-    App, AppHandle, Manager, Runtime,
+    App, AppHandle, Manager, Runtime, WebviewWindow,
 };
 
 pub struct TrayRecordingState {
@@ -23,11 +23,29 @@ impl TrayRecordingState {
     }
 }
 
+/// 在主窗口 Webview 上执行恢复：先取消最小化，再显示并聚焦。
+pub fn restore_main_webview_window<R: Runtime>(window: &WebviewWindow<R>) {
+    if let Err(e) = window.unminimize() {
+        log::warn!("取消最小化主窗口失败: {}", e);
+    }
+    if let Err(e) = window.show() {
+        log::warn!("显示主窗口失败: {}", e);
+    }
+    if let Err(e) = window.set_focus() {
+        log::warn!("聚焦主窗口失败: {}", e);
+    }
+}
+
 pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.unminimize();
-        let _ = window.set_focus();
+    let app_for_thread = app.clone();
+    if let Err(e) = app.clone().run_on_main_thread(move || {
+        if let Some(window) = app_for_thread.get_webview_window("main") {
+            restore_main_webview_window(&window);
+        } else {
+            log::warn!("未找到主窗口，无法从托盘恢复");
+        }
+    }) {
+        log::error!("派发主窗口显示任务失败: {}", e);
     }
 }
 

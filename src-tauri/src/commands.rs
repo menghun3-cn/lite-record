@@ -86,9 +86,15 @@ pub async fn stop_recording(
     update_tray_tooltip(&app, false);
 
     // 停止后恢复主窗口
-    let _ = window.unminimize();
-    let _ = window.show();
-    let _ = window.set_focus();
+    if let Err(e) = window.unminimize() {
+        log::warn!("取消最小化主窗口失败: {}", e);
+    }
+    if let Err(e) = window.show() {
+        log::warn!("显示主窗口失败: {}", e);
+    }
+    if let Err(e) = window.set_focus() {
+        log::warn!("聚焦主窗口失败: {}", e);
+    }
 
     let _ = window.emit("recording-stopped", &path_str);
     log::info!("录屏已停止: {}", path_str);
