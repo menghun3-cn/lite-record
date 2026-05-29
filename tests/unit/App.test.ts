@@ -93,8 +93,7 @@ describe('App.vue', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="btn-stop"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="status-text"]').text()).toContain('正在录制')
-    expect(wrapper.find('[data-testid="recording-indicator"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="status-text"]').text()).toContain('录制中')
   })
 
   it('点击停止录制调用停止命令', async () => {

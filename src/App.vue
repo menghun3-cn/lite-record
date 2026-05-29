@@ -121,15 +121,12 @@ watch(recordingSource, async (source) => {
         >
           {{ durationText }}
         </div>
-        <p class="text-sm text-muted-foreground mt-1" data-testid="status-text">
-          {{ isRecording ? '正在录制...' : '准备就绪' }}
-        </p>
         <p
-          v-if="isRecording"
-          class="text-xs text-red-500 mt-0.5"
-          data-testid="recording-indicator"
+          class="text-sm mt-1"
+          :class="isRecording ? 'text-red-500' : 'text-muted-foreground'"
+          data-testid="status-text"
         >
-          ● 录制中
+          {{ isRecording ? '● 录制中' : '准备就绪' }}
         </p>
       </div>
 
