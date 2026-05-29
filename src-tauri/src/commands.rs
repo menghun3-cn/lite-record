@@ -100,6 +100,35 @@ pub fn get_recording_state(state: State<'_, AppState>) -> Result<bool, String> {
     Ok(recorder_guard.is_some())
 }
 
+/// 获取视频存储目录
+#[tauri::command]
+pub fn get_video_dir() -> Result<String, String> {
+    let dir = resolve_video_dir()?;
+    Ok(dir.to_string_lossy().to_string())
+}
+
+/// 在资源管理器中打开视频存储目录
+#[tauri::command]
+pub fn open_video_dir() -> Result<(), String> {
+    let dir = resolve_video_dir()?;
+
+    #[cfg(windows)]
+    {
+        std::process::Command::new("explorer")
+            .arg(&dir)
+            .spawn()
+            .map_err(|e| format!("打开目录失败: {}", e))?;
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = dir;
+        return Err("仅支持 Windows".to_string());
+    }
+
+    Ok(())
+}
+
 /// 枚举可录制窗口
 #[tauri::command]
 pub fn list_windows() -> Result<Vec<WindowInfo>, String> {

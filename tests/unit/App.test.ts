@@ -11,14 +11,35 @@ describe('App.vue', () => {
     mockInvoke.mockImplementation(async (cmd: string) => {
       if (cmd === 'list_windows') return []
       if (cmd === 'get_recording_state') return false
+      if (cmd === 'get_video_dir') return 'C:\\Users\\admin\\.lite-record\\video'
       return null
     })
   })
 
-  it('渲染主界面', () => {
+  it('渲染主界面', async () => {
     const wrapper = mount(App)
+    await flushPromises()
     expect(wrapper.find('[data-testid="app-root"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('lite-record')
+    expect(wrapper.find('header').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="video-dir-section"]').exists()).toBe(true)
+  })
+
+  it('显示存储路径', async () => {
+    const wrapper = mount(App)
+    await flushPromises()
+    expect(wrapper.find('[data-testid="video-dir-path"]').text()).toContain(
+      '.lite-record\\video',
+    )
+  })
+
+  it('点击打开目录调用 Tauri 命令', async () => {
+    const wrapper = mount(App)
+    await flushPromises()
+
+    await wrapper.find('[data-testid="btn-open-video-dir"]').trigger('click')
+    await flushPromises()
+
+    expect(mockInvoke).toHaveBeenCalledWith('open_video_dir')
   })
 
   it('显示录屏源选择', () => {

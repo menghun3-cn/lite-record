@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { Play, Square, Monitor, AppWindow, Settings } from '@lucide/vue'
+import { Play, Square, Monitor, AppWindow, Settings, FolderOpen } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { useRecorder } from '@/composables/useRecorder'
+import { useVideoDir } from '@/composables/useVideoDir'
 
 const {
   isRecording,
@@ -17,6 +18,8 @@ const {
   toggleRecording,
 } = useRecorder()
 
+const { videoDir, isOpening, openVideoDir } = useVideoDir()
+
 watch(recordingSource, async (source) => {
   if (source === 'window') {
     await loadWindows()
@@ -27,10 +30,6 @@ watch(recordingSource, async (source) => {
 
 <template>
   <div class="min-h-screen bg-background flex flex-col" data-testid="app-root">
-    <header class="h-12 border-b flex items-center px-4 bg-card">
-      <h1 class="text-lg font-semibold">lite-record</h1>
-    </header>
-
     <main class="flex-1 flex flex-col items-center justify-center p-6 gap-8">
       <div class="w-full max-w-sm">
         <Label class="text-sm font-medium mb-3 block">选择录屏源</Label>
@@ -139,6 +138,29 @@ watch(recordingSource, async (source) => {
         <p>快捷键: Ctrl+Shift+R 开始 | Ctrl+Shift+S 停止</p>
         <p v-if="isRecording">录制中可正常操作其他窗口，主窗口已最小化</p>
       </div>
+
+      <div class="w-full max-w-sm rounded-lg border bg-card p-3" data-testid="video-dir-section">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <Label class="text-xs text-muted-foreground">存储路径</Label>
+          <Button
+            variant="outline"
+            size="sm"
+            class="h-8 shrink-0"
+            :disabled="!videoDir || isOpening"
+            data-testid="btn-open-video-dir"
+            @click="openVideoDir"
+          >
+            <FolderOpen class="mr-1 h-3.5 w-3.5" />
+            打开目录
+          </Button>
+        </div>
+        <p
+          class="text-xs text-foreground break-all leading-relaxed"
+          data-testid="video-dir-path"
+        >
+          {{ videoDir || '加载中...' }}
+        </p>
+      </div>
     </main>
 
     <footer class="h-12 border-t flex items-center justify-between px-4 bg-card">
@@ -146,7 +168,7 @@ watch(recordingSource, async (source) => {
         <Settings class="mr-2 h-4 w-4" />
         设置
       </Button>
-      <span class="text-xs text-muted-foreground">lite-record v0.1.0</span>
+      <span class="text-xs text-muted-foreground">v0.1.0</span>
     </footer>
   </div>
 </template>

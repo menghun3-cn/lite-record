@@ -11,7 +11,8 @@ mod windows_list;
 mod capture_session;
 
 pub use commands::{
-    get_recording_state, list_windows, start_recording, stop_recording,
+    get_recording_state, get_video_dir, list_windows, open_video_dir, start_recording,
+    stop_recording,
 };
 
 pub struct AppState {
@@ -44,6 +45,8 @@ pub fn run() {
             stop_recording,
             get_recording_state,
             list_windows,
+            get_video_dir,
+            open_video_dir,
         ])
         .run(tauri::generate_context!())
         .expect("运行 Tauri 应用时出错");
