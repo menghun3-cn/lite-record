@@ -1,0 +1,42 @@
+[package]
+name = "ai-capture"
+version = "0.1.0"
+description = "AI Capture - Windows轻量级录屏工具"
+authors = ["AI Capture Team"]
+license = "MIT"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "ai_capture_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.2", features = ["tray-icon"] }
+tauri-plugin-log = "2"
+tauri-plugin-global-shortcut = "2"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+chrono = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+windows-capture = "2.0.0"
+
+[dependencies.windows]
+version = "0.52"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Performance",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+]
