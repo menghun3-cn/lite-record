@@ -27,6 +27,7 @@ yarn-error.log*
 
 # Rust / Tauri
 src-tauri/target/
+src-tauri/test_videos/
 
 # Screen recordings (runtime output)
 video/*
