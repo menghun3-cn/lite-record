@@ -1,6 +1,6 @@
 use tauri::{AppHandle, Emitter, State, Window};
 
-use crate::paths::resolve_video_dir;
+use crate::paths::{format_path_for_display, resolve_video_dir};
 use crate::recorder::RecorderConfig;
 use crate::tray::update_tray_tooltip;
 use crate::windows_list::WindowInfo;
@@ -75,7 +75,7 @@ pub async fn stop_recording(
     match recorder {
         Some(mut rec) => {
             let output_path = rec.stop().map_err(|e| format!("停止录制失败: {}", e))?;
-            let path_str = output_path.to_string_lossy().to_string();
+            let path_str = format_path_for_display(&output_path);
 
             overlay::hide_recording_overlay(&app)?;
             update_tray_tooltip(&app, false);
@@ -104,7 +104,7 @@ pub fn get_recording_state(state: State<'_, AppState>) -> Result<bool, String> {
 #[tauri::command]
 pub fn get_video_dir() -> Result<String, String> {
     let dir = resolve_video_dir()?;
-    Ok(dir.to_string_lossy().to_string())
+    Ok(format_path_for_display(&dir))
 }
 
 /// 在资源管理器中打开视频存储目录

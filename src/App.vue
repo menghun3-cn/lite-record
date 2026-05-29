@@ -29,10 +29,10 @@ watch(recordingSource, async (source) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background flex flex-col" data-testid="app-root">
-    <main class="flex-1 flex flex-col items-center justify-center p-6 gap-8">
-      <div class="w-full max-w-sm">
-        <Label class="text-sm font-medium mb-3 block">选择录屏源</Label>
+  <div class="h-full overflow-hidden bg-background flex flex-col" data-testid="app-root">
+    <main class="flex-1 min-h-0 flex flex-col items-center px-4 py-3 gap-3 overflow-hidden">
+      <div class="w-full max-w-sm shrink-0">
+        <Label class="text-sm font-medium mb-2 block">选择录屏源</Label>
         <RadioGroup
           v-model="recordingSource"
           class="flex gap-2"
@@ -48,10 +48,10 @@ watch(recordingSource, async (source) => {
             />
             <Label
               for="desktop"
-              class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[88px]"
+              class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[72px]"
               :class="{ 'opacity-50 cursor-not-allowed': isRecording }"
             >
-              <Monitor class="mb-2 h-6 w-6" />
+              <Monitor class="mb-1.5 h-5 w-5" />
               <span class="text-sm font-medium">整个桌面</span>
             </Label>
           </div>
@@ -64,10 +64,10 @@ watch(recordingSource, async (source) => {
             />
             <Label
               for="window"
-              class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[88px]"
+              class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[72px]"
               :class="{ 'opacity-50 cursor-not-allowed': isRecording }"
             >
-              <AppWindow class="mb-2 h-6 w-6" />
+              <AppWindow class="mb-1.5 h-5 w-5" />
               <span class="text-sm font-medium">选择窗口</span>
             </Label>
           </div>
@@ -76,13 +76,13 @@ watch(recordingSource, async (source) => {
 
       <div
         v-if="recordingSource === 'window'"
-        class="w-full max-w-sm"
+        class="w-full max-w-sm shrink-0"
         data-testid="window-picker"
       >
-        <Label class="text-sm font-medium mb-2 block">选择要录制的窗口</Label>
+        <Label class="text-sm font-medium mb-1.5 block">选择要录制的窗口</Label>
         <select
           v-model="selectedWindowId"
-          class="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          class="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
           :disabled="isRecording"
           data-testid="window-select"
         >
@@ -93,69 +93,78 @@ watch(recordingSource, async (source) => {
         </select>
       </div>
 
-      <div class="text-center">
+      <div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center shrink">
         <div
-          class="text-5xl font-mono font-semibold tracking-wider transition-all duration-300"
+          class="text-4xl font-mono font-semibold tracking-wider transition-all duration-300"
           :class="isRecording ? 'text-red-500 animate-pulse' : 'text-foreground'"
           data-testid="duration-display"
         >
           {{ durationText }}
         </div>
-        <p class="text-sm text-muted-foreground mt-2" data-testid="status-text">
+        <p class="text-sm text-muted-foreground mt-1" data-testid="status-text">
           {{ isRecording ? '正在录制...' : '准备就绪' }}
         </p>
         <p
           v-if="isRecording"
-          class="text-xs text-red-500 mt-1"
+          class="text-xs text-red-500 mt-0.5"
           data-testid="recording-indicator"
         >
           ● 录制中
         </p>
       </div>
 
-      <Button
-        size="lg"
-        class="w-full max-w-sm h-14 text-lg font-medium transition-all duration-200"
-        :variant="isRecording ? 'destructive' : 'default'"
-        :class="isRecording ? 'hover:bg-red-600' : ''"
-        :data-testid="isRecording ? 'btn-stop' : 'btn-start'"
-        @click="toggleRecording"
-      >
-        <Play v-if="!isRecording" class="mr-2 h-5 w-5" />
-        <Square v-else class="mr-2 h-5 w-5" />
-        {{ isRecording ? '停止录制' : '开始录制' }}
-      </Button>
+      <div class="w-full max-w-sm shrink-0 space-y-2">
+        <Button
+          size="lg"
+          class="w-full h-12 text-base font-medium transition-all duration-200"
+          :variant="isRecording ? 'destructive' : 'default'"
+          :class="isRecording ? 'hover:bg-red-600' : ''"
+          :data-testid="isRecording ? 'btn-stop' : 'btn-start'"
+          @click="toggleRecording"
+        >
+          <Play v-if="!isRecording" class="mr-2 h-4 w-4" />
+          <Square v-else class="mr-2 h-4 w-4" />
+          {{ isRecording ? '停止录制' : '开始录制' }}
+        </Button>
 
-      <p
-        v-if="lastOutputPath"
-        class="text-xs text-green-600 text-center max-w-sm break-all"
-        data-testid="last-output-path"
-      >
-        已保存: {{ lastOutputPath }}
-      </p>
+        <p
+          v-if="lastOutputPath"
+          class="text-xs text-green-600 text-center truncate"
+          :title="lastOutputPath"
+          data-testid="last-output-path"
+        >
+          已保存: {{ lastOutputPath }}
+        </p>
 
-      <div class="text-xs text-muted-foreground text-center space-y-1">
-        <p>快捷键: Ctrl+Shift+R 开始 | Ctrl+Shift+S 停止</p>
-        <p v-if="isRecording">录制中可正常操作其他窗口，主窗口已最小化</p>
+        <p class="text-[11px] text-muted-foreground text-center leading-tight">
+          快捷键: Ctrl+Shift+R 开始 | Ctrl+Shift+S 停止
+          <template v-if="isRecording">
+            · 录制中可正常操作其他窗口
+          </template>
+        </p>
       </div>
 
-      <div class="w-full max-w-sm rounded-lg border bg-card p-3" data-testid="video-dir-section">
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <Label class="text-xs text-muted-foreground">存储路径</Label>
+      <div
+        class="w-full max-w-sm shrink-0 rounded-lg border bg-card p-2.5"
+        data-testid="video-dir-section"
+      >
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <Label class="text-xs text-muted-foreground shrink-0">存储路径</Label>
           <Button
             variant="outline"
             size="sm"
-            class="h-8 shrink-0"
+            class="h-7 px-2 text-xs shrink-0"
             :disabled="!videoDir || isOpening"
             data-testid="btn-open-video-dir"
             @click="openVideoDir"
           >
-            <FolderOpen class="mr-1 h-3.5 w-3.5" />
+            <FolderOpen class="mr-1 h-3 w-3" />
             打开目录
           </Button>
         </div>
         <p
-          class="text-xs text-foreground break-all leading-relaxed"
+          class="text-[11px] text-foreground truncate leading-tight"
+          :title="videoDir"
           data-testid="video-dir-path"
         >
           {{ videoDir || '加载中...' }}
@@ -163,9 +172,9 @@ watch(recordingSource, async (source) => {
       </div>
     </main>
 
-    <footer class="h-12 border-t flex items-center justify-between px-4 bg-card">
-      <Button variant="ghost" size="sm" class="text-muted-foreground" data-testid="btn-settings">
-        <Settings class="mr-2 h-4 w-4" />
+    <footer class="h-10 border-t flex items-center justify-between px-4 bg-card shrink-0">
+      <Button variant="ghost" size="sm" class="h-8 text-muted-foreground" data-testid="btn-settings">
+        <Settings class="mr-1.5 h-3.5 w-3.5" />
         设置
       </Button>
       <span class="text-xs text-muted-foreground">v0.1.0</span>
