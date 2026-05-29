@@ -1,9 +1,12 @@
 import { defineComponent } from 'vue'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { invoke } from '@tauri-apps/api/core'
 import { register } from '@tauri-apps/plugin-global-shortcut'
-import { useRecorder } from '@/composables/useRecorder'
+import {
+  RECORDING_COUNTDOWN_SECONDS,
+  useRecorder,
+} from '@/composables/useRecorder'
 
 const mockInvoke = vi.mocked(invoke)
 const mockRegister = vi.mocked(register)
@@ -18,8 +21,13 @@ function mountRecorder() {
   return mount(Comp)
 }
 
+async function advanceCountdown() {
+  await vi.advanceTimersByTimeAsync(RECORDING_COUNTDOWN_SECONDS * 1000)
+}
+
 describe('useRecorder', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     mockInvoke.mockImplementation(async (cmd: string) => {
       if (cmd === 'list_windows') return []
@@ -28,6 +36,47 @@ describe('useRecorder', () => {
       if (cmd === 'stop_recording') return 'C:\\Users\\admin\\.lite-record\\video\\out.mp4'
       return null
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('开始录制前显示 3 秒倒计时', async () => {
+    const wrapper = mountRecorder()
+    await flushPromises()
+
+    const startPromise = wrapper.vm.startRecording()
+    await flushPromises()
+
+    expect(wrapper.vm.isCountdown).toBe(true)
+    expect(wrapper.vm.countdownValue).toBe(RECORDING_COUNTDOWN_SECONDS)
+    expect(mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording')).toHaveLength(0)
+
+    await advanceCountdown()
+    await startPromise
+    await flushPromises()
+
+    expect(wrapper.vm.isCountdown).toBe(false)
+    expect(wrapper.vm.isRecording).toBe(true)
+    expect(mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording')).toHaveLength(1)
+  })
+
+  it('倒计时期间 cancelCountdownStart 不会开始录制', async () => {
+    const wrapper = mountRecorder()
+    await flushPromises()
+
+    const startPromise = wrapper.vm.startRecording()
+    await flushPromises()
+    expect(wrapper.vm.isCountdown).toBe(true)
+
+    wrapper.vm.cancelCountdownStart()
+    await startPromise
+    await flushPromises()
+
+    expect(wrapper.vm.isCountdown).toBe(false)
+    expect(wrapper.vm.isRecording).toBe(false)
+    expect(mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording')).toHaveLength(0)
   })
 
   it('并发 startRecording 仅调用一次 start_recording', async () => {
@@ -49,7 +98,9 @@ describe('useRecorder', () => {
 
     const first = wrapper.vm.startRecording()
     const second = wrapper.vm.startRecording()
+    await flushPromises()
 
+    await advanceCountdown()
     resolveStart!('recording_20260101_120000_123')
     await Promise.all([first, second])
     await flushPromises()
@@ -80,7 +131,10 @@ describe('useRecorder', () => {
     const wrapper = mountRecorder()
     await flushPromises()
 
-    await wrapper.vm.startRecording()
+    const startPromise = wrapper.vm.startRecording()
+    await flushPromises()
+    await advanceCountdown()
+    await startPromise
     await flushPromises()
 
     const first = wrapper.vm.stopRecording()
@@ -116,7 +170,10 @@ describe('useRecorder', () => {
     const wrapper = mountRecorder()
     await flushPromises()
 
-    await wrapper.vm.startRecording()
+    const startPromise = wrapper.vm.startRecording()
+    await flushPromises()
+    await advanceCountdown()
+    await startPromise
     await flushPromises()
 
     const stopCall = wrapper.vm.stopRecording()
@@ -155,7 +212,10 @@ describe('useRecorder', () => {
     const wrapper = mountRecorder()
     await flushPromises()
 
-    await wrapper.vm.startRecording()
+    const startPromise = wrapper.vm.startRecording()
+    await flushPromises()
+    await advanceCountdown()
+    await startPromise
     await flushPromises()
 
     const stopShortcut = mockRegister.mock.calls.find(

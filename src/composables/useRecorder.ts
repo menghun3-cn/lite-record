@@ -12,6 +12,9 @@ export interface WindowInfo {
   title: string
 }
 
+/** 开始录制前的倒计时秒数 */
+export const RECORDING_COUNTDOWN_SECONDS = 3
+
 export function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
@@ -21,6 +24,8 @@ export function formatDuration(seconds: number): string {
 export function useRecorder() {
   const { showError, clearMessage } = useAppMessage()
   const isRecording = ref(false)
+  const isCountdown = ref(false)
+  const countdownValue = ref(0)
   const recordingSource = ref<RecordingSource>('desktop')
   const selectedWindowId = ref<number | null>(null)
   const windows = ref<WindowInfo[]>([])
@@ -28,6 +33,8 @@ export function useRecorder() {
   const durationText = ref('00:00')
   const lastOutputPath = ref<string | null>(null)
   let timerInterval: ReturnType<typeof setInterval> | null = null
+  let countdownInterval: ReturnType<typeof setInterval> | null = null
+  let countdownFinish: ((accepted: boolean) => void) | null = null
   let startInFlight = false
   let stopInFlight = false
 
@@ -36,6 +43,52 @@ export function useRecorder() {
       clearInterval(timerInterval)
       timerInterval = null
     }
+  }
+
+  function clearCountdownInterval() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval)
+      countdownInterval = null
+    }
+  }
+
+  function cancelCountdown() {
+    if (!isCountdown.value) return
+
+    clearCountdownInterval()
+    isCountdown.value = false
+    countdownValue.value = 0
+
+    if (countdownFinish) {
+      const finish = countdownFinish
+      countdownFinish = null
+      finish(false)
+    }
+  }
+
+  function cancelCountdownStart() {
+    cancelCountdown()
+    startInFlight = false
+  }
+
+  function waitForCountdown(): Promise<boolean> {
+    return new Promise((resolve) => {
+      isCountdown.value = true
+      countdownValue.value = RECORDING_COUNTDOWN_SECONDS
+      countdownFinish = resolve
+
+      countdownInterval = setInterval(() => {
+        countdownValue.value -= 1
+        if (countdownValue.value <= 0) {
+          clearCountdownInterval()
+          isCountdown.value = false
+          countdownValue.value = 0
+          const finish = countdownFinish
+          countdownFinish = null
+          finish?.(true)
+        }
+      }, 1000)
+    })
   }
 
   function startTimer() {
@@ -69,7 +122,7 @@ export function useRecorder() {
   }
 
   async function startRecording() {
-    if (isRecording.value || startInFlight || stopInFlight) return
+    if (isRecording.value || startInFlight || stopInFlight || isCountdown.value) return
 
     if (recordingSource.value === 'window' && selectedWindowId.value == null) {
       showError('请先选择一个窗口')
@@ -78,6 +131,9 @@ export function useRecorder() {
 
     startInFlight = true
     try {
+      const accepted = await waitForCountdown()
+      if (!accepted) return
+
       await invoke<string>('start_recording', {
         source: recordingSource.value,
         windowId:
@@ -136,6 +192,10 @@ export function useRecorder() {
   }
 
   function toggleRecording() {
+    if (isCountdown.value) {
+      cancelCountdownStart()
+      return
+    }
     if (isRecording.value) {
       void stopRecording()
     } else {
@@ -150,6 +210,10 @@ export function useRecorder() {
         void startRecording()
       })
       await register('CommandOrControl+Shift+S', () => {
+        if (isCountdown.value) {
+          cancelCountdownStart()
+          return
+        }
         if (isRecording.value) void stopRecording()
       })
     } catch (error) {
@@ -192,12 +256,15 @@ export function useRecorder() {
   onUnmounted(() => {
     unlistenStart?.()
     unlistenStop?.()
+    cancelCountdownStart()
     void unregisterShortcuts()
     clearTimer()
   })
 
   return {
     isRecording,
+    isCountdown,
+    countdownValue,
     recordingSource,
     selectedWindowId,
     windows,
@@ -208,6 +275,7 @@ export function useRecorder() {
     startRecording,
     stopRecording,
     toggleRecording,
+    cancelCountdownStart,
     formatDuration,
   }
 }

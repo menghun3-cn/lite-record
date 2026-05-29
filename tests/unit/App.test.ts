@@ -1,12 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { invoke } from '@tauri-apps/api/core'
+import { RECORDING_COUNTDOWN_SECONDS } from '@/composables/useRecorder'
 import App from '@/App.vue'
 
 const mockInvoke = vi.mocked(invoke)
 
+async function advanceCountdown() {
+  await vi.advanceTimersByTimeAsync(RECORDING_COUNTDOWN_SECONDS * 1000)
+}
+
 describe('App.vue', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     mockInvoke.mockImplementation(async (cmd: string) => {
       if (cmd === 'list_windows') return []
@@ -14,6 +20,10 @@ describe('App.vue', () => {
       if (cmd === 'get_video_dir') return 'C:\\Users\\admin\\.lite-record\\video'
       return null
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('渲染主界面', async () => {
@@ -58,6 +68,58 @@ describe('App.vue', () => {
     expect(wrapper.find('[data-testid="status-text"]').text()).toContain('准备就绪')
   })
 
+  it('点击开始录制先显示倒计时再调用 Tauri 命令', async () => {
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_windows') return []
+      if (cmd === 'get_recording_state') return false
+      if (cmd === 'get_video_dir') return 'C:\\Users\\admin\\.lite-record\\video'
+      if (cmd === 'start_recording') return 'recording_20260101_120000'
+      return null
+    })
+
+    const wrapper = mount(App)
+    await flushPromises()
+
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="countdown-display"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="countdown-display"]').text()).toBe('3')
+    expect(wrapper.find('[data-testid="status-text"]').text()).toContain('即将开始录制')
+    expect(mockInvoke).not.toHaveBeenCalledWith('start_recording', expect.anything())
+
+    await advanceCountdown()
+    await flushPromises()
+
+    expect(mockInvoke).toHaveBeenCalledWith('start_recording', {
+      source: 'desktop',
+      windowId: null,
+    })
+  })
+
+  it('倒计时期间点击取消不会开始录制', async () => {
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_windows') return []
+      if (cmd === 'get_recording_state') return false
+      if (cmd === 'get_video_dir') return 'C:\\Users\\admin\\.lite-record\\video'
+      if (cmd === 'start_recording') return 'recording_20260101_120000'
+      return null
+    })
+
+    const wrapper = mount(App)
+    await flushPromises()
+
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="btn-cancel-countdown"]').exists()).toBe(true)
+
+    await wrapper.find('[data-testid="btn-cancel-countdown"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="btn-start"]').exists()).toBe(true)
+    expect(mockInvoke).not.toHaveBeenCalledWith('start_recording', expect.anything())
+  })
+
   it('点击开始录制调用 Tauri 命令', async () => {
     mockInvoke.mockImplementation(async (cmd: string) => {
       if (cmd === 'list_windows') return []
@@ -69,7 +131,9 @@ describe('App.vue', () => {
     const wrapper = mount(App)
     await flushPromises()
 
-    await wrapper.find('[data-testid="btn-start"]').trigger('click')
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+    await advanceCountdown()
     await flushPromises()
 
     expect(mockInvoke).toHaveBeenCalledWith('start_recording', {
@@ -89,7 +153,9 @@ describe('App.vue', () => {
     const wrapper = mount(App)
     await flushPromises()
 
-    await wrapper.find('[data-testid="btn-start"]').trigger('click')
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+    await advanceCountdown()
     await flushPromises()
 
     expect(wrapper.find('[data-testid="btn-stop"]').exists()).toBe(true)
@@ -108,7 +174,9 @@ describe('App.vue', () => {
     const wrapper = mount(App)
     await flushPromises()
 
-    await wrapper.find('[data-testid="btn-start"]').trigger('click')
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+    await advanceCountdown()
     await flushPromises()
     await wrapper.find('[data-testid="btn-stop"]').trigger('click')
     await flushPromises()
@@ -127,7 +195,9 @@ describe('App.vue', () => {
     const wrapper = mount(App)
     await flushPromises()
 
-    await wrapper.find('[data-testid="btn-start"]').trigger('click')
+    void wrapper.find('[data-testid="btn-start"]').trigger('click')
+    await flushPromises()
+    await advanceCountdown()
     await flushPromises()
 
     expect(wrapper.find('[data-testid="app-message"]').exists()).toBe(true)

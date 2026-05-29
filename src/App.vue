@@ -10,6 +10,8 @@ import { useAppMessage } from '@/composables/useAppMessage'
 
 const {
   isRecording,
+  isCountdown,
+  countdownValue,
   recordingSource,
   selectedWindowId,
   windows,
@@ -56,7 +58,7 @@ watch(recordingSource, async (source) => {
         <RadioGroup
           v-model="recordingSource"
           class="flex gap-2"
-          :disabled="isRecording"
+          :disabled="isRecording || isCountdown"
           data-testid="source-group"
         >
           <div class="flex-1">
@@ -69,7 +71,7 @@ watch(recordingSource, async (source) => {
             <Label
               for="desktop"
               class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[72px]"
-              :class="{ 'opacity-50 cursor-not-allowed': isRecording }"
+              :class="{ 'opacity-50 cursor-not-allowed': isRecording || isCountdown }"
             >
               <Monitor class="mb-1.5 h-5 w-5" />
               <span class="text-sm font-medium">整个桌面</span>
@@ -85,7 +87,7 @@ watch(recordingSource, async (source) => {
             <Label
               for="window"
               class="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all min-h-[72px]"
-              :class="{ 'opacity-50 cursor-not-allowed': isRecording }"
+              :class="{ 'opacity-50 cursor-not-allowed': isRecording || isCountdown }"
             >
               <AppWindow class="mb-1.5 h-5 w-5" />
               <span class="text-sm font-medium">选择窗口</span>
@@ -103,7 +105,7 @@ watch(recordingSource, async (source) => {
         <select
           v-model="selectedWindowId"
           class="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-          :disabled="isRecording"
+          :disabled="isRecording || isCountdown"
           data-testid="window-select"
         >
           <option :value="null" disabled>请选择窗口...</option>
@@ -116,17 +118,31 @@ watch(recordingSource, async (source) => {
       <div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center shrink">
         <div
           class="text-4xl font-mono font-semibold tracking-wider transition-all duration-300"
-          :class="isRecording ? 'text-red-500 animate-pulse' : 'text-foreground'"
-          data-testid="duration-display"
+          :class="
+            isRecording
+              ? 'text-red-500 animate-pulse'
+              : isCountdown
+                ? 'text-blue-500'
+                : 'text-foreground'
+          "
+          :data-testid="isCountdown ? 'countdown-display' : 'duration-display'"
         >
-          {{ durationText }}
+          {{ isCountdown ? countdownValue : durationText }}
         </div>
         <p
           class="text-sm mt-1"
-          :class="isRecording ? 'text-red-500' : 'text-muted-foreground'"
+          :class="
+            isRecording
+              ? 'text-red-500'
+              : isCountdown
+                ? 'text-blue-500'
+                : 'text-muted-foreground'
+          "
           data-testid="status-text"
         >
-          {{ isRecording ? '● 录制中' : '准备就绪' }}
+          {{
+            isRecording ? '● 录制中' : isCountdown ? '即将开始录制' : '准备就绪'
+          }}
         </p>
       </div>
 
@@ -134,14 +150,16 @@ watch(recordingSource, async (source) => {
         <Button
           size="lg"
           class="w-full h-12 text-base font-medium transition-all duration-200"
-          :variant="isRecording ? 'destructive' : 'default'"
+          :variant="isRecording ? 'destructive' : isCountdown ? 'outline' : 'default'"
           :class="isRecording ? 'hover:bg-red-600' : ''"
-          :data-testid="isRecording ? 'btn-stop' : 'btn-start'"
+          :data-testid="
+            isRecording ? 'btn-stop' : isCountdown ? 'btn-cancel-countdown' : 'btn-start'
+          "
           @click="toggleRecording"
         >
-          <Play v-if="!isRecording" class="mr-2 h-4 w-4" />
-          <Square v-else class="mr-2 h-4 w-4" />
-          {{ isRecording ? '停止录制' : '开始录制' }}
+          <Play v-if="!isRecording && !isCountdown" class="mr-2 h-4 w-4" />
+          <Square v-else-if="isRecording" class="mr-2 h-4 w-4" />
+          {{ isRecording ? '停止录制' : isCountdown ? '取消' : '开始录制' }}
         </Button>
 
         <p
@@ -155,7 +173,10 @@ watch(recordingSource, async (source) => {
 
         <p class="text-[11px] text-muted-foreground text-center leading-tight">
           快捷键: Ctrl+Shift+R 开始 | Ctrl+Shift+S 停止
-          <template v-if="isRecording">
+          <template v-if="isCountdown">
+            · 倒计时中可按取消或 Ctrl+Shift+S 终止
+          </template>
+          <template v-else-if="isRecording">
             · 录制中可正常操作其他窗口
           </template>
         </p>
