@@ -19,7 +19,7 @@ export function formatDuration(seconds: number): string {
 }
 
 export function useRecorder() {
-  const { showError } = useAppMessage()
+  const { showError, clearMessage } = useAppMessage()
   const isRecording = ref(false)
   const recordingSource = ref<RecordingSource>('desktop')
   const selectedWindowId = ref<number | null>(null)
@@ -69,7 +69,7 @@ export function useRecorder() {
   }
 
   async function startRecording() {
-    if (isRecording.value || startInFlight) return
+    if (isRecording.value || startInFlight || stopInFlight) return
 
     if (recordingSource.value === 'window' && selectedWindowId.value == null) {
       showError('请先选择一个窗口')
@@ -83,6 +83,7 @@ export function useRecorder() {
         windowId:
           recordingSource.value === 'window' ? selectedWindowId.value : null,
       })
+      clearMessage()
       isRecording.value = true
       startTimer()
     } catch (error) {
@@ -105,15 +106,18 @@ export function useRecorder() {
   function resetRecordingUi() {
     isRecording.value = false
     clearTimer()
+    duration.value = 0
+    durationText.value = '00:00'
   }
 
   async function stopRecording() {
-    if (!isRecording.value || stopInFlight) return
+    if (!isRecording.value || stopInFlight || startInFlight) return
 
     stopInFlight = true
     try {
       const path = await invoke<string>('stop_recording')
       lastOutputPath.value = path
+      clearMessage()
       resetRecordingUi()
     } catch (error) {
       const message = String(error)
@@ -171,13 +175,17 @@ export function useRecorder() {
     await registerShortcuts()
 
     unlistenStart = await listen<string>('recording-started', () => {
+      clearMessage()
       isRecording.value = true
       startTimer()
     })
     unlistenStop = await listen<string>('recording-stopped', (event) => {
       isRecording.value = false
       lastOutputPath.value = event.payload
+      clearMessage()
       clearTimer()
+      duration.value = 0
+      durationText.value = '00:00'
     })
   })
 

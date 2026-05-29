@@ -99,6 +99,42 @@ describe('useRecorder', () => {
     vi.unstubAllGlobals()
   })
 
+  it('停止进行中时忽略 startRecording', async () => {
+    let resolveStop: (value: string) => void
+    const stopPromise = new Promise<string>((resolve) => {
+      resolveStop = resolve
+    })
+
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_windows') return []
+      if (cmd === 'get_recording_state') return false
+      if (cmd === 'start_recording') return 'recording_20260101_120000'
+      if (cmd === 'stop_recording') return stopPromise
+      return null
+    })
+
+    const wrapper = mountRecorder()
+    await flushPromises()
+
+    await wrapper.vm.startRecording()
+    await flushPromises()
+
+    const stopCall = wrapper.vm.stopRecording()
+    const startDuringStop = wrapper.vm.startRecording()
+    await flushPromises()
+
+    expect(
+      mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording'),
+    ).toHaveLength(1)
+
+    resolveStop!('C:\\Users\\admin\\.lite-record\\video\\out.mp4')
+    await stopCall
+    await startDuringStop
+    await flushPromises()
+
+    expect(wrapper.vm.isRecording).toBe(false)
+  })
+
   it('快捷键重复触发 stop 时不弹错', async () => {
     let stopCalls = 0
     mockInvoke.mockImplementation(async (cmd: string) => {

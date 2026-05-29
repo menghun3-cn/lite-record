@@ -84,7 +84,7 @@ impl GraphicsCaptureApiHandler for ScreenCaptureHandler {
 
     fn on_closed(&mut self) -> Result<(), Self::Error> {
         if let Some(encoder) = self.encoder.take() {
-            let _ = encoder.finish();
+            encoder.finish()?;
         }
         Ok(())
     }

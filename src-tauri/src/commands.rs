@@ -67,33 +67,32 @@ pub async fn stop_recording(
 ) -> Result<String, String> {
     log::info!("停止录屏请求");
 
-    let recorder = {
+    let path_str = {
         let mut recorder_guard = state
             .recorder
             .lock()
             .map_err(|e| format!("锁错误: {}", e))?;
-        recorder_guard.take()
+
+        let mut rec = match recorder_guard.take() {
+            Some(recorder) => recorder,
+            None => return Err("没有正在进行的录制".to_string()),
+        };
+
+        let output_path = rec.stop().map_err(|e| format!("停止录制失败: {}", e))?;
+        format_path_for_display(&output_path)
     };
 
-    match recorder {
-        Some(mut rec) => {
-            let output_path = rec.stop().map_err(|e| format!("停止录制失败: {}", e))?;
-            let path_str = format_path_for_display(&output_path);
+    overlay::hide_recording_overlay(&app)?;
+    update_tray_tooltip(&app, false);
 
-            overlay::hide_recording_overlay(&app)?;
-            update_tray_tooltip(&app, false);
+    // 停止后恢复主窗口
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
 
-            // 停止后恢复主窗口
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-
-            let _ = window.emit("recording-stopped", &path_str);
-            log::info!("录屏已停止: {}", path_str);
-            Ok(path_str)
-        }
-        None => Err("没有正在进行的录制".to_string()),
-    }
+    let _ = window.emit("recording-stopped", &path_str);
+    log::info!("录屏已停止: {}", path_str);
+    Ok(path_str)
 }
 
 /// 获取录制状态
