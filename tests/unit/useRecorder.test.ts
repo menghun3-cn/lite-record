@@ -62,6 +62,31 @@ describe('useRecorder', () => {
     expect(mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording')).toHaveLength(1)
   })
 
+  it('快捷键开始且窗口最小化时先恢复主窗口', async () => {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    const unminimize = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(getCurrentWindow).mockReturnValue({
+      isMinimized: vi.fn().mockResolvedValue(true),
+      isVisible: vi.fn().mockResolvedValue(true),
+      unminimize,
+      show: vi.fn().mockResolvedValue(undefined),
+      setFocus: vi.fn().mockResolvedValue(undefined),
+    } as never)
+
+    const wrapper = mountRecorder()
+    await flushPromises()
+
+    const startPromise = wrapper.vm.startRecording({ fromShortcut: true })
+    await flushPromises()
+
+    expect(unminimize).toHaveBeenCalled()
+    expect(wrapper.vm.isCountdown).toBe(true)
+
+    await advanceCountdown()
+    await startPromise
+    await flushPromises()
+  })
+
   it('倒计时期间 cancelCountdownStart 不会开始录制', async () => {
     const wrapper = mountRecorder()
     await flushPromises()

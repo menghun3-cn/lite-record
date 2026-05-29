@@ -3,9 +3,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 import { useAppMessage } from '@/composables/useAppMessage'
-import { restoreMainWindow } from '@/utils/restoreMainWindow'
+import { restoreMainWindow, restoreMainWindowIfNeeded } from '@/utils/restoreMainWindow'
 
 export type RecordingSource = 'desktop' | 'window'
+
+export interface StartRecordingOptions {
+  /** 来自全局快捷键时，最小化/隐藏状态下先恢复主窗口再倒计时 */
+  fromShortcut?: boolean
+}
 
 export interface WindowInfo {
   id: number
@@ -121,16 +126,23 @@ export function useRecorder() {
     }
   }
 
-  async function startRecording() {
+  async function startRecording(options: StartRecordingOptions = {}) {
     if (isRecording.value || startInFlight || stopInFlight || isCountdown.value) return
 
     if (recordingSource.value === 'window' && selectedWindowId.value == null) {
+      if (options.fromShortcut) {
+        await restoreMainWindowIfNeeded()
+      }
       showError('请先选择一个窗口')
       return
     }
 
     startInFlight = true
     try {
+      if (options.fromShortcut) {
+        await restoreMainWindowIfNeeded()
+      }
+
       const accepted = await waitForCountdown()
       if (!accepted) return
 
@@ -207,7 +219,7 @@ export function useRecorder() {
     try {
       await unregisterShortcuts()
       await register('CommandOrControl+Shift+R', () => {
-        void startRecording()
+        void startRecording({ fromShortcut: true })
       })
       await register('CommandOrControl+Shift+S', () => {
         if (isCountdown.value) {
