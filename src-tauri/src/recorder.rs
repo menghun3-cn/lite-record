@@ -50,6 +50,10 @@ pub struct Recorder {
     is_recording: bool,
 }
 
+fn generate_session_id() -> String {
+    format!("recording_{}", Local::now().format("%Y%m%d_%H%M%S_%3f"))
+}
+
 impl Recorder {
     pub fn new(config: RecorderConfig) -> Result<Self, RecorderError> {
         match config.source.as_str() {
@@ -79,7 +83,7 @@ impl Recorder {
             return Err(RecorderError::AlreadyRecording);
         }
 
-        let session_id = format!("recording_{}", Local::now().format("%Y%m%d_%H%M%S"));
+        let session_id = generate_session_id();
         let output_path = self.config.output_dir.join(format!("{}.mp4", session_id));
 
         log::info!(
@@ -274,14 +278,15 @@ mod tests {
         assert!(recorder.session_id().is_none());
     }
 
-    #[cfg(not(windows))]
     #[test]
     fn test_session_id_format() {
-        let config = create_test_config();
-        let mut recorder = Recorder::new(config).unwrap();
-        let session_id = recorder.start().unwrap();
-
+        let session_id = generate_session_id();
         assert!(session_id.starts_with("recording_"));
-        assert_eq!(session_id.len(), 25);
+        let suffix = session_id.strip_prefix("recording_").unwrap();
+        let parts: Vec<_> = suffix.split('_').collect();
+        assert_eq!(parts.len(), 3, "unexpected session id: {session_id}");
+        assert_eq!(parts[0].len(), 8);
+        assert_eq!(parts[1].len(), 6);
+        assert_eq!(parts[2].len(), 3);
     }
 }

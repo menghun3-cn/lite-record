@@ -28,6 +28,7 @@ export function useRecorder() {
   const durationText = ref('00:00')
   const lastOutputPath = ref<string | null>(null)
   let timerInterval: ReturnType<typeof setInterval> | null = null
+  let startInFlight = false
   let stopInFlight = false
 
   function clearTimer() {
@@ -68,13 +69,14 @@ export function useRecorder() {
   }
 
   async function startRecording() {
-    if (isRecording.value) return
+    if (isRecording.value || startInFlight) return
 
     if (recordingSource.value === 'window' && selectedWindowId.value == null) {
       showError('请先选择一个窗口')
       return
     }
 
+    startInFlight = true
     try {
       await invoke<string>('start_recording', {
         source: recordingSource.value,
@@ -84,11 +86,19 @@ export function useRecorder() {
       isRecording.value = true
       startTimer()
     } catch (error) {
+      const message = String(error)
+      if (message.includes('已在录制中')) {
+        await syncRecordingState()
+        return
+      }
       console.error('开始录制失败:', error)
-      showError(`开始录制失败: ${error}`)
+      showError(message)
       isRecording.value = false
       clearTimer()
       durationText.value = '00:00'
+      await syncRecordingState()
+    } finally {
+      startInFlight = false
     }
   }
 
@@ -133,7 +143,7 @@ export function useRecorder() {
     try {
       await unregisterShortcuts()
       await register('CommandOrControl+Shift+R', () => {
-        if (!isRecording.value) void startRecording()
+        void startRecording()
       })
       await register('CommandOrControl+Shift+S', () => {
         if (isRecording.value) void stopRecording()

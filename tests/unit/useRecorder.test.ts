@@ -30,6 +30,36 @@ describe('useRecorder', () => {
     })
   })
 
+  it('并发 startRecording 仅调用一次 start_recording', async () => {
+    let resolveStart: (value: string) => void
+    const startPromise = new Promise<string>((resolve) => {
+      resolveStart = resolve
+    })
+
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_windows') return []
+      if (cmd === 'get_recording_state') return false
+      if (cmd === 'start_recording') return startPromise
+      if (cmd === 'stop_recording') return 'C:\\Users\\admin\\.lite-record\\video\\out.mp4'
+      return null
+    })
+
+    const wrapper = mountRecorder()
+    await flushPromises()
+
+    const first = wrapper.vm.startRecording()
+    const second = wrapper.vm.startRecording()
+
+    resolveStart!('recording_20260101_120000_123')
+    await Promise.all([first, second])
+    await flushPromises()
+
+    expect(
+      mockInvoke.mock.calls.filter(([cmd]) => cmd === 'start_recording'),
+    ).toHaveLength(1)
+    expect(wrapper.vm.isRecording).toBe(true)
+  })
+
   it('并发 stopRecording 仅调用一次 stop_recording', async () => {
     let resolveStop: (value: string) => void
     const stopPromise = new Promise<string>((resolve) => {

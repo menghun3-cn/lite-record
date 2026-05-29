@@ -17,16 +17,6 @@ pub async fn start_recording(
 ) -> Result<String, String> {
     log::info!("开始录屏: source={}, window_id={:?}", source, window_id);
 
-    {
-        let recorder_guard = state
-            .recorder
-            .lock()
-            .map_err(|e| format!("锁错误: {}", e))?;
-        if recorder_guard.is_some() {
-            return Err("已在录制中".to_string());
-        }
-    }
-
     if source == "window" && window_id.is_none() {
         return Err("选择窗口录制时必须指定 window_id".to_string());
     }
@@ -38,20 +28,22 @@ pub async fn start_recording(
         output_dir: resolve_video_dir()?,
     };
 
-    let mut recorder =
-        crate::recorder::Recorder::new(config).map_err(|e| format!("创建录屏器失败: {}", e))?;
-
-    let session_id = recorder
-        .start()
-        .map_err(|e| format!("开始录制失败: {}", e))?;
-
-    {
+    let session_id = {
         let mut recorder_guard = state
             .recorder
             .lock()
             .map_err(|e| format!("锁错误: {}", e))?;
+
+        if recorder_guard.is_some() {
+            return Err("已在录制中".to_string());
+        }
+
+        let mut recorder = crate::recorder::Recorder::new(config).map_err(|e| e.to_string())?;
+
+        let session_id = recorder.start().map_err(|e| e.to_string())?;
         *recorder_guard = Some(recorder);
-    }
+        session_id
+    };
 
     overlay::show_recording_overlay(&app)?;
     update_tray_tooltip(&app, true);
