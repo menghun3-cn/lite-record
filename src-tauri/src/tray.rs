@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
     App, AppHandle, Manager, Runtime,
 };
 
@@ -23,6 +23,14 @@ impl TrayRecordingState {
     }
 }
 
+pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 pub fn setup_tray<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
     let show_i = MenuItem::with_id(app, "tray_show", "显示主窗口", true, None::<&str>)?;
     let quit_i = MenuItem::with_id(app, "tray_quit", "退出", true, None::<&str>)?;
@@ -39,29 +47,19 @@ pub fn setup_tray<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
         .menu(&menu)
         .tooltip("lite-record - 就绪")
         .on_menu_event(|app, event| match event.id.as_ref() {
-            "tray_show" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }
+            "tray_show" => show_main_window(app),
             "tray_quit" => {
                 app.exit(0);
             }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
+            if let TrayIconEvent::DoubleClick {
                 button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
                 ..
             } = event
             {
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
+                show_main_window(tray.app_handle());
             }
         })
         .build(app)?;

@@ -1,7 +1,5 @@
 use std::sync::Mutex;
 
-use tauri::Manager;
-
 mod commands;
 mod overlay;
 mod paths;
@@ -29,13 +27,6 @@ impl AppState {
     }
 }
 
-fn focus_main_window(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.set_focus();
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -43,7 +34,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            focus_main_window(app);
+            tray::show_main_window(app);
         }));
     }
 
