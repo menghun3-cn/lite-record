@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 import { Play, Square, Monitor, AppWindow, Settings, FolderOpen, X } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -23,6 +23,12 @@ const {
 
 const { videoDir, isOpening, openVideoDir } = useVideoDir()
 const { message, clearMessage } = useAppMessage()
+
+const lastOutputFileName = computed(() => {
+  if (!lastOutputPath.value) return ''
+  const parts = lastOutputPath.value.split(/[/\\]/)
+  return parts[parts.length - 1] ?? lastOutputPath.value
+})
 
 watch(recordingSource, async (source) => {
   if (source === 'window') {
@@ -168,7 +174,7 @@ watch(recordingSource, async (source) => {
           :title="lastOutputPath"
           data-testid="last-output-path"
         >
-          已保存: {{ lastOutputPath }}
+          已保存: {{ lastOutputFileName }}
         </p>
 
         <p class="text-[11px] text-muted-foreground text-center leading-tight">
