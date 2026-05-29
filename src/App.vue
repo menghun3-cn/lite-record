@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { Play, Square, Monitor, AppWindow, Settings, FolderOpen } from '@lucide/vue'
+import { Play, Square, Monitor, AppWindow, Settings, FolderOpen, X } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { useRecorder } from '@/composables/useRecorder'
 import { useVideoDir } from '@/composables/useVideoDir'
+import { useAppMessage } from '@/composables/useAppMessage'
 
 const {
   isRecording,
@@ -19,6 +20,7 @@ const {
 } = useRecorder()
 
 const { videoDir, isOpening, openVideoDir } = useVideoDir()
+const { message, clearMessage } = useAppMessage()
 
 watch(recordingSource, async (source) => {
   if (source === 'window') {
@@ -30,6 +32,24 @@ watch(recordingSource, async (source) => {
 
 <template>
   <div class="h-full overflow-hidden bg-background flex flex-col" data-testid="app-root">
+    <div
+      v-if="message"
+      class="shrink-0 flex items-start gap-2 px-4 py-2.5 bg-destructive/10 border-b border-destructive/20 text-destructive text-sm"
+      role="alert"
+      data-testid="app-message"
+    >
+      <p class="flex-1 leading-snug">{{ message }}</p>
+      <button
+        type="button"
+        class="shrink-0 rounded p-1 hover:bg-destructive/10 transition-colors"
+        aria-label="关闭提示"
+        data-testid="btn-dismiss-message"
+        @click="clearMessage"
+      >
+        <X class="h-4 w-4" />
+      </button>
+    </div>
+
     <main class="flex-1 min-h-0 flex flex-col items-center px-4 py-3 gap-3 overflow-hidden">
       <div class="w-full max-w-sm shrink-0">
         <Label class="text-sm font-medium mb-2 block">选择录屏源</Label>

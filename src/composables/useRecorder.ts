@@ -2,6 +2,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
+import { useAppMessage } from '@/composables/useAppMessage'
+import { restoreMainWindow } from '@/utils/restoreMainWindow'
 
 export type RecordingSource = 'desktop' | 'window'
 
@@ -17,6 +19,7 @@ export function formatDuration(seconds: number): string {
 }
 
 export function useRecorder() {
+  const { showError } = useAppMessage()
   const isRecording = ref(false)
   const recordingSource = ref<RecordingSource>('desktop')
   const selectedWindowId = ref<number | null>(null)
@@ -25,6 +28,7 @@ export function useRecorder() {
   const durationText = ref('00:00')
   const lastOutputPath = ref<string | null>(null)
   let timerInterval: ReturnType<typeof setInterval> | null = null
+  let stopInFlight = false
 
   function clearTimer() {
     if (timerInterval) {
@@ -67,7 +71,7 @@ export function useRecorder() {
     if (isRecording.value) return
 
     if (recordingSource.value === 'window' && selectedWindowId.value == null) {
-      alert('请先选择一个窗口')
+      showError('请先选择一个窗口')
       return
     }
 
@@ -81,25 +85,39 @@ export function useRecorder() {
       startTimer()
     } catch (error) {
       console.error('开始录制失败:', error)
-      alert(`开始录制失败: ${error}`)
+      showError(`开始录制失败: ${error}`)
       isRecording.value = false
       clearTimer()
       durationText.value = '00:00'
     }
   }
 
-  async function stopRecording() {
-    if (!isRecording.value) return
+  function resetRecordingUi() {
+    isRecording.value = false
+    clearTimer()
+  }
 
+  async function stopRecording() {
+    if (!isRecording.value || stopInFlight) return
+
+    stopInFlight = true
     try {
       const path = await invoke<string>('stop_recording')
       lastOutputPath.value = path
+      resetRecordingUi()
     } catch (error) {
+      const message = String(error)
+      if (message.includes('没有正在进行的录制')) {
+        resetRecordingUi()
+        await syncRecordingState()
+        await restoreMainWindow()
+        return
+      }
       console.error('停止录制失败:', error)
-      alert(`停止录制失败: ${error}`)
+      await restoreMainWindow()
+      showError(`停止录制失败: ${error}`)
     } finally {
-      isRecording.value = false
-      clearTimer()
+      stopInFlight = false
     }
   }
 
@@ -113,6 +131,7 @@ export function useRecorder() {
 
   async function registerShortcuts() {
     try {
+      await unregisterShortcuts()
       await register('CommandOrControl+Shift+R', () => {
         if (!isRecording.value) void startRecording()
       })

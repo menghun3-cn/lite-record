@@ -1,7 +1,9 @@
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useAppMessage } from '@/composables/useAppMessage'
 
 export function useVideoDir() {
+  const { showError } = useAppMessage()
   const videoDir = ref('')
   const isOpening = ref(false)
 
@@ -22,7 +24,7 @@ export function useVideoDir() {
       await invoke('open_video_dir')
     } catch (error) {
       console.error('打开存储目录失败:', error)
-      alert(`打开目录失败: ${error}`)
+      showError(`打开目录失败: ${error}`)
     } finally {
       isOpening.value = false
     }

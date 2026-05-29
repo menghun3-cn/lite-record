@@ -117,7 +117,7 @@ describe('App.vue', () => {
     expect(mockInvoke).toHaveBeenCalledWith('stop_recording')
   })
 
-  it('处理录制错误后恢复初始状态', async () => {
+  it('处理录制错误后显示可关闭提示并恢复初始状态', async () => {
     mockInvoke.mockImplementation(async (cmd: string) => {
       if (cmd === 'list_windows') return []
       if (cmd === 'get_recording_state') return false
@@ -125,17 +125,19 @@ describe('App.vue', () => {
       return null
     })
 
-    vi.stubGlobal('alert', vi.fn())
-
     const wrapper = mount(App)
     await flushPromises()
 
     await wrapper.find('[data-testid="btn-start"]').trigger('click')
     await flushPromises()
 
+    expect(wrapper.find('[data-testid="app-message"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="app-message"]').text()).toContain('录制失败')
     expect(wrapper.find('[data-testid="btn-start"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="status-text"]').text()).toContain('准备就绪')
 
-    vi.unstubAllGlobals()
+    await wrapper.find('[data-testid="btn-dismiss-message"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="app-message"]').exists()).toBe(false)
   })
 })

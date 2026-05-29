@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 
+import './mocks/tauri-window'
+
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
