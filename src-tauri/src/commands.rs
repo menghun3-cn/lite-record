@@ -18,7 +18,10 @@ pub async fn start_recording(
     log::info!("开始录屏: source={}, window_id={:?}", source, window_id);
 
     {
-        let recorder_guard = state.recorder.lock().map_err(|e| format!("锁错误: {}", e))?;
+        let recorder_guard = state
+            .recorder
+            .lock()
+            .map_err(|e| format!("锁错误: {}", e))?;
         if recorder_guard.is_some() {
             return Err("已在录制中".to_string());
         }
@@ -38,10 +41,15 @@ pub async fn start_recording(
     let mut recorder =
         crate::recorder::Recorder::new(config).map_err(|e| format!("创建录屏器失败: {}", e))?;
 
-    let session_id = recorder.start().map_err(|e| format!("开始录制失败: {}", e))?;
+    let session_id = recorder
+        .start()
+        .map_err(|e| format!("开始录制失败: {}", e))?;
 
     {
-        let mut recorder_guard = state.recorder.lock().map_err(|e| format!("锁错误: {}", e))?;
+        let mut recorder_guard = state
+            .recorder
+            .lock()
+            .map_err(|e| format!("锁错误: {}", e))?;
         *recorder_guard = Some(recorder);
     }
 
@@ -68,7 +76,10 @@ pub async fn stop_recording(
     log::info!("停止录屏请求");
 
     let recorder = {
-        let mut recorder_guard = state.recorder.lock().map_err(|e| format!("锁错误: {}", e))?;
+        let mut recorder_guard = state
+            .recorder
+            .lock()
+            .map_err(|e| format!("锁错误: {}", e))?;
         recorder_guard.take()
     };
 
@@ -96,7 +107,10 @@ pub async fn stop_recording(
 /// 获取录制状态
 #[tauri::command]
 pub fn get_recording_state(state: State<'_, AppState>) -> Result<bool, String> {
-    let recorder_guard = state.recorder.lock().map_err(|e| format!("锁错误: {}", e))?;
+    let recorder_guard = state
+        .recorder
+        .lock()
+        .map_err(|e| format!("锁错误: {}", e))?;
     Ok(recorder_guard.is_some())
 }
 

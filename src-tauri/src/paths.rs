@@ -3,15 +3,13 @@ use std::path::{Path, PathBuf};
 /// 去掉 Windows 扩展路径前缀 `\\?\`，便于界面展示
 pub fn format_path_for_display(path: &Path) -> String {
     let raw = path.to_string_lossy();
-    raw.strip_prefix(r"\\?\")
-        .unwrap_or(&raw)
-        .to_string()
+    raw.strip_prefix(r"\\?\").unwrap_or(&raw).to_string()
 }
 
 /// 视频输出目录：`%USERPROFILE%\.lite-record\video`
 pub fn resolve_video_dir() -> Result<PathBuf, String> {
-    let user_profile = std::env::var("USERPROFILE")
-        .map_err(|_| "无法读取 USERPROFILE 环境变量".to_string())?;
+    let user_profile =
+        std::env::var("USERPROFILE").map_err(|_| "无法读取 USERPROFILE 环境变量".to_string())?;
 
     let dir = PathBuf::from(user_profile)
         .join(".lite-record")

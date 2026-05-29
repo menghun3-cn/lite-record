@@ -42,10 +42,7 @@ impl GraphicsCaptureApiHandler for ScreenCaptureHandler {
 
     fn new(ctx: Context<Self::Flags>) -> Result<Self, Self::Error> {
         let flags = ctx.flags.clone();
-        let output = flags
-            .output_path
-            .to_str()
-            .ok_or("输出路径包含非法字符")?;
+        let output = flags.output_path.to_str().ok_or("输出路径包含非法字符")?;
 
         let video_settings = VideoSettingsBuilder::new(flags.width, flags.height)
             .sub_type(VideoSettingsSubType::H264)
@@ -149,8 +146,12 @@ pub fn start(config: &RecorderConfig, output_path: PathBuf) -> Result<CaptureSes
 
     if config.source == "desktop" {
         let monitor = Monitor::primary().map_err(|e| format!("获取主显示器失败: {}", e))?;
-        let width = monitor.width().map_err(|e| format!("获取宽度失败: {}", e))?;
-        let height = monitor.height().map_err(|e| format!("获取高度失败: {}", e))?;
+        let width = monitor
+            .width()
+            .map_err(|e| format!("获取宽度失败: {}", e))?;
+        let height = monitor
+            .height()
+            .map_err(|e| format!("获取高度失败: {}", e))?;
         return start_with_item(monitor, width, height, config.fps, output_path, stop);
     }
 
@@ -181,10 +182,7 @@ pub fn stop(session: CaptureSession) -> Result<PathBuf, String> {
         .map_err(|e| format!("停止录屏失败: {}", e))?;
 
     if !session.output_path.exists() {
-        return Err(format!(
-            "视频文件未生成: {:?}",
-            session.output_path
-        ));
+        return Err(format!("视频文件未生成: {:?}", session.output_path));
     }
 
     Ok(session.output_path)

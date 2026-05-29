@@ -119,8 +119,8 @@ impl Recorder {
         #[cfg(windows)]
         {
             let session = self.capture.take().ok_or(RecorderError::NotRecording)?;
-            let output_path = crate::capture_session::stop(session)
-                .map_err(|e| RecorderError::System(e))?;
+            let output_path =
+                crate::capture_session::stop(session).map_err(|e| RecorderError::System(e))?;
             self.session_id = None;
             self.output_path = None;
             return Ok(output_path);
